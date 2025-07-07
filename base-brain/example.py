@@ -1,80 +1,91 @@
 import random
 
 import pisqpipe as pp
-from pisqpipe import DEBUG_EVAL
+from pisqpipe import state
+from structs import Point
 
 pp.infotext = (
     'name="pbrain-genetic", authors="Andrew Petten, Chance Kane, Jack Klobchar, Tim Xu"'
 )
+
 
 MAX_BOARD = 100
 board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
 
 
 def brain_init():
-    if pp.width < 5 or pp.height < 5:
-        pp.pipeOut("ERROR size of the board")
+    if state.width < 5 or state.height < 5:
+        pp.pipe_out("ERROR size of the board")
         return
-    if pp.width > MAX_BOARD or pp.height > MAX_BOARD:
-        pp.pipeOut("ERROR Maximal board size is {}".format(MAX_BOARD))
+    if state.width > MAX_BOARD or state.height > MAX_BOARD:
+        pp.pipe_out("ERROR Maximal board size is {}".format(MAX_BOARD))
         return
-    pp.pipeOut("OK")
+    pp.pipe_out("OK")
 
 
 def brain_restart():
-    for x in range(pp.width):
-        for y in range(pp.height):
+    for x in range(state.width):
+        for y in range(state.height):
             board[x][y] = 0
-    pp.pipeOut("OK")
+    pp.pipe_out("OK")
 
 
-def isFree(x, y):
-    return x >= 0 and y >= 0 and x < pp.width and y < pp.height and board[x][y] == 0
+def is_valid(p: Point):
+    return p.x >= 0 and p.y >= 0 and p.x < state.width and p.y < state.height
 
 
-def brain_my(x, y):
-    if isFree(x, y):
-        board[x][y] = 1
+def is_free(p: Point):
+    return is_valid(p) and board[p.x][p.y] == 0
+
+
+def brain_my(p: Point):
+    if is_free(p):
+        board[p.x][p.y] = 1
     else:
-        pp.pipeOut("ERROR my move [{},{}]".format(x, y))
+        pp.pipe_out(f"ERROR my move {p}")
 
 
-def brain_opponents(x, y):
-    if isFree(x, y):
-        board[x][y] = 2
+def brain_opponents(p: Point):
+    if is_free(p):
+        board[p.x][p.y] = 2
     else:
-        pp.pipeOut("ERROR opponents's move [{},{}]".format(x, y))
+        pp.pipe_out(f"ERROR opponents's move {p}")
 
 
-def brain_block(x, y):
-    if isFree(x, y):
-        board[x][y] = 3
+def brain_block(p: Point):
+    if is_free(p):
+        board[p.x][p.y] = 3
     else:
-        pp.pipeOut("ERROR winning move [{},{}]".format(x, y))
+        pp.pipe_out(f"ERROR winning move {p}")
 
 
-def brain_takeback(x, y):
-    if x >= 0 and y >= 0 and x < pp.width and y < pp.height and board[x][y] != 0:
-        board[x][y] = 0
+def brain_takeback(p: Point):
+    if (
+        p.x >= 0
+        and p.y >= 0
+        and p.x < state.width
+        and p.y < state.height
+        and board[p.x][p.y] != 0
+    ):
+        board[p.x][p.y] = 0
         return 0
     return 2
 
 
 def brain_turn():
-    if pp.terminateAI:
+    if state.terminate_ai:
         return
     i = 0
     while True:
-        x = random.randint(0, pp.width)
-        y = random.randint(0, pp.height)
+        p = Point(x=random.randint(0, state.width), y=random.randint(0, state.height))
         i += 1
-        if pp.terminateAI:
+        if state.terminate_ai:
             return
-        if isFree(x, y):
+        if is_free(p):
             break
     if i > 1:
-        pp.pipeOut("DEBUG {} coordinates didn't hit an empty field".format(i))
-    pp.do_mymove(x, y)
+        pp.pipe_out("DEBUG {} coordinates didn't hit an empty field".format(i))
+    pp.do_mymove(p)
 
 
 def brain_end():
@@ -82,20 +93,20 @@ def brain_end():
 
 
 def brain_about():
-    pp.pipeOut(pp.infotext)
+    pp.pipe_out(pp.infotext)
 
 
-if DEBUG_EVAL:
-    import win32gui
+# if DEBUG_EVAL:
+#     import win32gui
 
-    def brain_eval(x, y):
-        # TODO check if it works as expected
-        wnd = win32gui.GetForegroundWindow()
-        dc = win32gui.GetDC(wnd)
-        rc = win32gui.GetClientRect(wnd)
-        c = str(board[x][y])
-        win32gui.ExtTextOut(dc, rc[2] - 15, 3, 0, None, c, ())
-        win32gui.ReleaseDC(wnd, dc)
+#     def brain_eval(x, y):
+#         # TODO check if it works as expected
+#         wnd = win32gui.GetForegroundWindow()
+#         dc = win32gui.GetDC(wnd)
+#         rc = win32gui.GetClientRect(wnd)
+#         c = str(board[x][y])
+#         win32gui.ExtTextOut(dc, rc[2] - 15, 3, 0, None, c, ())
+#         win32gui.ReleaseDC(wnd, dc)
 
 
 ######################################################################
@@ -147,8 +158,7 @@ pp.brain_takeback = brain_takeback
 pp.brain_turn = brain_turn
 pp.brain_end = brain_end
 pp.brain_about = brain_about
-if DEBUG_EVAL:
-    pp.brain_eval = brain_eval
+# pp.brain_eval = brain_eval
 
 
 def main():

@@ -1,45 +1,21 @@
 # functions and variables for pipe AI and functions that communicate with manager through pipes
-# don't modify this file
 
 import sys
+from typing import Optional
 
-import pywintypes
 import win32api
-import win32console
 import win32event
 import win32process
+import win32security
+from structs import GameParameters, Point
 
 DEBUG = False
 ABOUT_FUNC = True
-DEBUG_EVAL = True
+DEBUG_EVAL = False
 
-# information about a game - you should use these variables
-"""the board size"""
-width, height = None, None
-"""time for one turn in milliseconds"""
-info_timeout_turn = 30000
-"""total time for a game"""
-info_timeout_match = 1000000000
-"""left time for a game"""
-info_time_left = 1000000000
-"""maximum memory in bytes, zero if unlimited"""
-info_max_memory = 0
-"""0: human opponent, 1: AI opponent, 2: tournament, 3: network tournament"""
-info_game_type = 1
-"""0: five or more stones win, 1: exactly five stones win"""
-info_exact5 = 0
-"""0: gomoku, 1: renju"""
-info_renju = 0
-"""0: single game, 1: continuous"""
-info_continuous = 0
-"""return from brain_turn when terminateAI > 0"""
-terminateAI = None
-"""tick count at the beginning of turn"""
-start_time = None
-"""folder for persistent files"""
-dataFolder = ""
-
-event1, event2 = None, None
+state = GameParameters()
+event1 = win32event.CreateEvent(None, 0, 0, None)
+event2 = win32event.CreateEvent(None, 1, 1, None)
 
 
 # you have to implement these functions
@@ -58,22 +34,22 @@ def brain_turn():
     raise NotImplementedError
 
 
-def brain_my(x, y):
+def brain_my(p: Point):
     """put your move to the board"""
     raise NotImplementedError
 
 
-def brain_opponents(x, y):
+def brain_opponents(p: Point):
     """put opponent's move to the board"""
     raise NotImplementedError
 
 
-def brain_block(x, y):
+def brain_block(p: Point):
     """square [x,y] belongs to a winning line (when info_continuous is 1)"""
     raise NotImplementedError
 
 
-def brain_takeback(x, y):
+def brain_takeback(p: Point):
     """clear one square, return value: 0: success, 1: not supported, 2: error"""
     raise NotImplementedError
 
@@ -83,7 +59,7 @@ def brain_end():
     raise NotImplementedError
 
 
-def brain_eval(x, y):
+def brain_eval(p: Point):
     """display evaluation of square [x,y]"""
     raise NotImplementedError
 
@@ -99,14 +75,13 @@ def brain_about():
 
 def pipe_out(what):
     """write a line to sys.stdout"""
-    ret = len(what)
     print(what)
     sys.stdout.flush()
 
 
-def do_mymove(x, y):
-    brain_my(x, y)
-    pipe_out("{},{}".format(x, y))
+def do_mymove(p: Point):
+    brain_my(p)
+    pipe_out(p)
 
 
 def suggest(x, y):
@@ -114,45 +89,36 @@ def suggest(x, y):
     pipe_out("SUGGEST {},{}".format(x, y))
 
 
-def safe_int(v):
-    """helper function for parsing strings to int"""
-    try:
-        ret = int(v)
-        return ret
-    except:
-        return None
-
-
 def get_line():
     """read a line from sys.stdin"""
     return sys.stdin.readline().strip()
 
 
-def parse_coord(param):
+def parse_coord(param) -> Optional[Point]:
     """parse coordinates x,y"""
     if param.count(",") != 1:
         return None
-    x, comma, y = param.partition(",")
-    x, y = [safe_int(v) for v in (x, y)]
-    if any(v is None for v in (x, y)):
-        return None, None
-    if x < 0 or y < 0 or x >= width or y >= height:
-        return None, None
-    return x, y
+
+    x, _, y = param.partition(",")
+    x, y = [int(v) for v in (x, y)]
+
+    if x < 0 or y < 0 or x >= state.width or y >= state.height:
+        return None
+
+    return Point(x=x, y=y)
 
 
-def parse_3int_chk(param):
+def parse_3int_chk(param) -> Optional[tuple[Point, int]]:
     """parse coordinates x,y and player number z"""
     if param.count(",") != 2:
-        return None, None, None
+        return None
     x, y, z = param.split(",")
-    x, y, z = [safe_int(v) for v in (x, y, z)]
-    if any(v is None for v in (x, y, z)):
-        return None, None, None
-    return x, y, z
+    x, y, z = [int(v) for v in (x, y, z)]
+
+    return (Point(x, y), z)
 
 
-def get_cmd_param(command, input):
+def get_cmd_param(command: str, input: str):
     """return word after command if input starts with command, otherwise return None"""
     cl = command.lower()
     il = input.lower()
@@ -173,100 +139,85 @@ def thread_loop():
 
 def turn():
     """start thinking"""
-    global terminateAI
-    terminateAI = 0
+    state.terminate_ai = False
     win32event.ResetEvent(event2)
     win32event.SetEvent(event1)
 
 
 def stop():
     """stop thinking"""
-    global terminateAI
-    terminateAI = 1
+    state.terminate_ai = True
     win32event.WaitForSingleObject(event2, win32event.INFINITE)
 
 
 def start():
-    global start_time
-    start_time = win32api.GetTickCount()
+    state.start_time = win32api.GetTickCount()
     stop()
-    global width, height
-    if not width:
-        width = height = 20
+    if not state.width:
+        state.width = state.height = 20
         brain_init()
 
 
 def do_command(cmd):
     """do command cmd"""
-    global \
-        info_max_memory, \
-        info_timeout_match, \
-        info_timeout_turn, \
-        info_time_left, \
-        info_game_type, \
-        info_exact5, \
-        info_continuous, \
-        info_renju, \
-        dataFolder
-    global width, height
     #
     param = get_cmd_param("info", cmd)
     if param is not None:
         info = get_cmd_param("max_memory", param)
         if info is not None:
-            info_max_memory = int(info)
+            state.info_max_memory = int(info)
             return
         #
         info = get_cmd_param("timeout_match", param)
         if info is not None:
-            info_timeout_match = int(info)
+            state.info_timeout_match = int(info)
             return
         #
         info = get_cmd_param("timeout_turn", param)
         if info is not None:
-            info_timeout_turn = int(info)
+            state.info_timeout_turn = int(info)
             return
         #
         info = get_cmd_param("time_left", param)
         if info is not None:
-            info_time_left = int(info)
+            state.info_time_left = int(info)
             return
         #
         info = get_cmd_param("game_type", param)
         if info is not None:
-            info_game_type = int(info)
+            state.info_game_type = int(info)
             return
         #
         info = get_cmd_param("rule", param)
         if info is not None:
             e = int(info)
-            info_exact5 = e & 1
-            info_continuous = (e >> 1) & 1
-            info_renju = (e >> 2) & 1
+            state.info_exact5 = e & 1
+            state.info_continuous = (e >> 1) & 1
+            state.info_renju = (e >> 2) & 1
             return
         #
         info = get_cmd_param("folder", param)
         if info is not None:
-            dataFolder = info
+            state.dataFolder = info
             return
         #
         info = get_cmd_param("evaluate", param)
         if DEBUG_EVAL and info is not None:
-            x, y = parse_coord(info)
-            if x is not None and y is not None:
-                brain_eval(x, y)
+            p: Optional[Point] = parse_coord(info)
+            if p is not None:
+                brain_eval(p)
             return
         # unknown info is ignored
         return
     #
     param = get_cmd_param("start", cmd)
     if param is not None:
-        width = safe_int(param)
-        if width is None or width < 5:
-            width = 0
+        dimension = int(param)
+        if dimension < 5:
+            state.width = state.height = 0
             pipe_out("ERROR bad START parameter")
         else:
-            height = width
+            state.width = state.height = dimension
             start()
             brain_init()
         return
@@ -274,15 +225,17 @@ def do_command(cmd):
     param = get_cmd_param("rectstart", cmd)
     if param is not None:
         if param.count(",") != 1:
-            width = height = 0
+            state.width = state.height = 0
         else:
-            width, c, height = param.partition(",")
-            width, height = [safe_int(v) for v in (width, height)]
-        if width is None or width < 5 or height is None or height < 5:
-            width = height = 0
-            pipe_out("ERROR bad RECTSTART parameters")
-        else:
-            start()
+            start_width, _, start_height = param.partition(",")
+            start_width = int(start_width)
+            start_height = int(start_height)
+
+            if start_width < 5 or start_height < 5:
+                state.width = state.height = 0
+                pipe_out("ERROR bad RECTSTART parameters")
+            else:
+                start()
             brain_init()
         return
     #
@@ -295,22 +248,22 @@ def do_command(cmd):
     param = get_cmd_param("turn", cmd)
     if param is not None:
         start()
-        x, y = parse_coord(param)
-        if x is None or y is None:
+        p: Optional[Point] = parse_coord(param)
+        if p is None:
             pipe_out("ERROR bad coordinates")
         else:
-            brain_opponents(x, y)
+            brain_opponents(p)
             turn()
         return
     #
     param = get_cmd_param("play", cmd)
     if param is not None:
         start()
-        x, y = parse_coord(param)
-        if x is None or y is None:
+        p: Optional[Point] = parse_coord(param)
+        if p is None:
             pipe_out("ERROR bad coordinates")
         else:
-            do_mymove(x, y)
+            do_mymove(p)
         return
     #
     param = get_cmd_param("begin", cmd)
@@ -339,13 +292,17 @@ def do_command(cmd):
         start()
         while True:  # fill the whole board
             cmd = get_line()
-            x, y, who = parse_3int_chk(cmd)
+            res = parse_3int_chk(cmd)
+            if res is None:
+                pipe_out("ERROR received invalid command")
+                break
+            p, who = res
             if who == 1:
-                brain_my(x, y)
+                brain_my(p)
             elif who == 2:
-                brain_opponents(x, y)
+                brain_opponents(p)
             elif who == 3:
-                brain_block(x, y)
+                brain_block(p)
             else:
                 if cmd.lower() != "done":
                     pipe_out("ERROR x,y,who or DONE expected after BOARD")
@@ -357,9 +314,9 @@ def do_command(cmd):
     if param is not None:
         start()
         t = "ERROR bad coordinates"
-        x, y = parse_coord(param)
-        if x is not None and y is not None:
-            e = brain_takeback(x, y)
+        p: Optional[Point] = parse_coord(param)
+        if p is not None:
+            e = brain_takeback(p)
             if e == 0:
                 t = "OK"
             elif e == 1:
@@ -372,20 +329,9 @@ def do_command(cmd):
 
 def main():
     """main function for AI console application"""
-    #
-    handle = win32console.GetStdHandle(win32console.STD_INPUT_HANDLE)
-    try:
-        if handle.GetConsoleMode():
-            pipe_out(
-                "MESSAGE Gomoku AI should not be started directly. Please install gomoku manager (http://sourceforge.net/projects/piskvork). Then enter path to this exe file in players settings."
-            )
-    except pywintypes.error:
-        pass
-    #
-    global event1, event2
-    event1 = win32event.CreateEvent(None, 0, 0, None)
-    win32process.beginthreadex(None, 0, thread_loop, (), 0)
-    event2 = win32event.CreateEvent(None, 1, 1, None)
+    sa = win32security.SECURITY_ATTRIBUTES()
+    win32process.beginthreadex(sa, 0, thread_loop, (), 0)
+
     while True:
         cmd = get_line()
         do_command(cmd)
