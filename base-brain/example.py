@@ -13,6 +13,13 @@ MAX_BOARD = 100
 board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
 
 
+def brain_restart():
+    for x in range(state.width):
+        for y in range(state.height):
+            board[x][y] = 0
+    pp.pipe_out("OK")
+
+
 def brain_init():
     if state.width < 5 or state.height < 5:
         pp.pipe_out("ERROR size of the board")
@@ -20,14 +27,8 @@ def brain_init():
     if state.width > MAX_BOARD or state.height > MAX_BOARD:
         pp.pipe_out("ERROR Maximal board size is {}".format(MAX_BOARD))
         return
-    pp.pipe_out("OK")
 
-
-def brain_restart():
-    for x in range(state.width):
-        for y in range(state.height):
-            board[x][y] = 0
-    pp.pipe_out("OK")
+    brain_restart()
 
 
 def is_valid(p: Point):
@@ -75,17 +76,22 @@ def brain_takeback(p: Point):
 def brain_turn():
     if state.terminate_ai:
         return
-    i = 0
-    while True:
-        p = Point(x=random.randint(0, state.width), y=random.randint(0, state.height))
-        i += 1
+
+    rows_idx = [n for n in range(state.height)]
+    col_idx = [n for n in range(state.width)]
+
+    random.shuffle(rows_idx)
+    for row in rows_idx:
+        random.shuffle(col_idx)
+
+        for x in col_idx:
+            p = Point(x=x, y=row)
+            if is_free(p):
+                pp.do_mymove(p)
+                return
+
         if state.terminate_ai:
             return
-        if is_free(p):
-            break
-    if i > 1:
-        pp.pipe_out("DEBUG {} coordinates didn't hit an empty field".format(i))
-    pp.do_mymove(p)
 
 
 def brain_end():
