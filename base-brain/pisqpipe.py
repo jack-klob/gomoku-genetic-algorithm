@@ -293,16 +293,14 @@ def do_command(cmd):
         while True:  # fill the whole board
             cmd = get_line()
             res = parse_3int_chk(cmd)
-            if res is None:
-                pipe_out("ERROR received invalid command")
-                break
-            p, who = res
-            if who == 1:
-                brain_my(p)
-            elif who == 2:
-                brain_opponents(p)
-            elif who == 3:
-                brain_block(p)
+            if res is not None:
+                p, who = res
+                if who == 1:
+                    brain_my(p)
+                elif who == 2:
+                    brain_opponents(p)
+                elif who == 3:
+                    brain_block(p)
             else:
                 if cmd.lower() != "done":
                     pipe_out("ERROR x,y,who or DONE expected after BOARD")
@@ -329,6 +327,7 @@ def do_command(cmd):
 
 def main():
     """main function for AI console application"""
+
     sa = win32security.SECURITY_ATTRIBUTES()
     win32process.beginthreadex(sa, 0, thread_loop, (), 0)
 
