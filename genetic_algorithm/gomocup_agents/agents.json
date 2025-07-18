@@ -2,26 +2,26 @@
     {
         "name": "LIGHTBLUE 2.4 (2018)",
         "elo": 730,
-        "path": "genetic_algorithm\\gomocup_agents\\LIGHTBLUE\\pbrain-LightBlue.exe"
+        "path": "LIGHTBLUE/pbrain-LightBlue.exe"
     },
     {
         "name": "MUSHROOM 3.14159 (2011)",
         "elo": 288,
-        "path": "genetic_algorithm\\gomocup_agents\\MUSHROOM11\\pbrain-mushroom.exe"
+        "path": "MUSHROOM11/pbrain-mushroom.exe"
     },
     {
         "name": "PELA 7.8 (2017)",
         "elo": 1499,
-        "path": "genetic_algorithm\\gomocup_agents\\PELA\\pbrain-pela.exe"
+        "path": "PELA/pbrain-pela.exe"
     },
     {
         "name": "PUREGM 2021",
         "elo": 1057,
-        "path": "genetic_algorithm\\gomocup_agents\\PUREGM\\pbrain-PureGM_Cinderalla.exe"
+        "path": "PUREGM/pbrain-PureGM_Cinderalla.exe"
     },
     {
         "name": "RAPFI 0.34.05 (2022)",
         "elo": 2625,
-        "path": "genetic_algorithm\\gomocup_agents\\RAPFI25\\pbrain-rapfi_avx2.exe"
+        "path": "RAPFI25/pbrain-rapfi_avx2.exe"
     }
 ]
