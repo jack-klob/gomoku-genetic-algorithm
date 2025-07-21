@@ -38,7 +38,8 @@ def identify_relevant_positions(board):
   relevantMask = (convolved != 0)*1    #update mask to show locations within 5 of another piece
   return relevantMask
 
-def calculate_value_at_point(board, x, y, maxLength = 4,player = 1):
+
+def calculate_value_at_point(board, x, y, maxLength = 5,player = 1):
   value = 0 
   lookup = np.array(genome[:-1])
   for direction in directions:
@@ -84,7 +85,7 @@ def calculate_value_at_point(board, x, y, maxLength = 4,player = 1):
       if maxLengthAlongAxis < 5: 
         break
     if tilesInARow >= 5:  
-       return np.inf #if this point is part of a winning threat, return infinity
+       return 65535 #if this point is part of a winning threat, return infinity/max value
     if blocked:
       value += lookup[clamp(2*(tilesInARow)-2,0, len(lookup)-1)]  #if the threat is blocked on one side, use the lookup table to get the value of the threat
     else:
