@@ -9,11 +9,12 @@ NUM_WEIGHTS = 10
 class GomocupAgent(BaseModel):
     name: str
     elo: int
-    path: str
+    cmd: str
 
 
-class Agent(BaseModel):
+class GeneticAgent(BaseModel):
     name: str
+    cmd: str
     weights: list[float] = Field(
         default_factory=lambda: [random.uniform(0, 1) for _ in range(NUM_WEIGHTS)]
     )

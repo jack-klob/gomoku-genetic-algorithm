@@ -1,16 +1,19 @@
 import random
 
-from agent import Agent
+from agent import GeneticAgent
 
 
-def crossover(parent1: Agent, parent2: Agent) -> Agent:
+def crossover(parent1: GeneticAgent, parent2: GeneticAgent) -> GeneticAgent:
     # Placeholder for crossover
     return parent1
 
 
 class Population:
     def __init__(self, size):
-        self.agents = [Agent(name=f"Agent {i}") for i in range(size)]
+        self.agents = [
+            GeneticAgent(name=f"Agent {i}", cmd="../base_brain/dist/pbrain-testexe.exe")
+            for i in range(size)
+        ]
 
     def evolve(self):
         # Sort agents by their fitness
