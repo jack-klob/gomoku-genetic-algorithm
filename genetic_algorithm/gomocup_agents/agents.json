@@ -1,0 +1,27 @@
+[
+    {
+        "name": "LIGHTBLUE 2.4 (2018)",
+        "elo": 730,
+        "cmd": "LIGHTBLUE/pbrain-LightBlue.exe"
+    },
+    {
+        "name": "MUSHROOM 3.14159 (2011)",
+        "elo": 288,
+        "cmd": "MUSHROOM11/pbrain-mushroom.exe"
+    },
+    {
+        "name": "PELA 7.8 (2017)",
+        "elo": 1499,
+        "cmd": "PELA/pbrain-pela.exe"
+    },
+    {
+        "name": "PUREGM 2021",
+        "elo": 1057,
+        "cmd": "PUREGM/pbrain-PureGM_Cinderalla.exe"
+    },
+    {
+        "name": "RAPFI 0.34.05 (2022)",
+        "elo": 2625,
+        "cmd": "RAPFI25/pbrain-rapfi_avx2.exe"
+    }
+]
