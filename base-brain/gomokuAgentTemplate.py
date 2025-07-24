@@ -10,7 +10,7 @@ pp.infotext = (
 )
 # genome for the genetic algorithm 11 values, 10 arbitrary, one constrained to [0,1]
 # #genome = [zero-closed,zero-open,one-closed,one-open,two-closed,two-open,three-closed,three-open,four-closed,four-open, aggression] 
-genome =  [2, 4, 8, 16, 32, 64, 128, 512, 1000, 2000, 0.5]  # genome for the genetic algorithm
+genome =  [8, 16, 32, 64, 128, 512, 1000, 2000, 0.5]  # genome for the genetic algorithm
 
 MAX_BOARD = 100
 #0 = empty, 1 = my stone, 2 = opponent's stone, 3 = winning move
