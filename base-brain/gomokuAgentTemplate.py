@@ -93,6 +93,12 @@ def calculate_value_at_point(board, x, y, maxLength = 5,player = 1):
   return value
 
 
+def brain_restart():
+    for x in range(state.width):
+        for y in range(state.height):
+            board[x][y] = 0
+    pp.pipe_out("OK")
+
 def brain_init():
     if state.width < 5 or state.height < 5:
         pp.pipe_out("ERROR size of the board")
@@ -100,14 +106,10 @@ def brain_init():
     if state.width > MAX_BOARD or state.height > MAX_BOARD:
         pp.pipe_out("ERROR Maximal board size is {}".format(MAX_BOARD))
         return
-    pp.pipe_out("OK")
+    brain_restart()
 
 
-def brain_restart():
-    for x in range(state.width):
-        for y in range(state.height):
-            board[x][y] = 0
-    pp.pipe_out("OK")
+
 
 
 def is_valid(p: Point):
