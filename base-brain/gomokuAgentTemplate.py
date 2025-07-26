@@ -15,14 +15,6 @@ genome =  [8, 16, 32, 64, 128, 512, 1000, 2000, 0.5]  # genome for the genetic a
 MAX_BOARD = 100
 #0 = empty, 1 = my stone, 2 = opponent's stone, 3 = winning move
 board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
-# diagKernel = np.eye(9, dtype = np.int8)
-# diagKernel[4,4] = 0
-# antiDiagKernel = np.rot90(diagKernel)
-# verticalKernel = np.zeros_like(antiDiagKernel)
-# verticalKernel[:,4] = 1
-# verticalKernel[4,4] = 0
-# horizontalKernel = np.rot90(verticalKernel)
-# kernels = [diagKernel, antiDiagKernel, verticalKernel, horizontalKernel]
 relevanceKernal = np.ones((9,9), dtype=np.int8) #used to track relevance of a point
 directions = [[0,1],[1,1],[1,0],[1,-1]]
 #possible alternatives for kernels: 8 compass directions? twice as many ops, but better for threats accurately
