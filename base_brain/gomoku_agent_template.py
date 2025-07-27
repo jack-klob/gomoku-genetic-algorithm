@@ -1,3 +1,6 @@
+import json
+import sys
+
 import numpy as np
 import pisqpipe as pp
 from pisqpipe import state
@@ -7,12 +10,14 @@ from structs import Point
 pp.infotext = 'name="pbrain-geneticPeabrain", authors="Andrew Petten, Chance Kane, Jack Klobchar, Tim Xu"'
 # genome for the genetic algorithm 11 values, 10 arbitrary, one constrained to [0,1]
 # #genome = [zero-closed,zero-open,one-closed,one-open,two-closed,two-open,three-closed,three-open,four-closed,four-open, aggression]
-genome = [8, 16, 32, 64, 128, 512, 1000, 2000, 0.5]  # genome for the genetic algorithm
+# default genome values
+genome = [0.004, 0.008, 0.016, 0.032, 0.064, 0.56, 0.5, 1.0, 0.5]
+THREAT_SCALE = 1000
 
 MAX_BOARD = 20
 # 0 = empty, 1 = my stone, 2 = opponent's stone, 3 = winning move
 board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
-relevanceKernal = np.ones((9, 9), dtype=np.int8)  # used to track relevance of a point
+relevanceKernal = np.ones((9, 9))  # used to track relevance of a point
 directions = [[0, 1], [1, 1], [1, 0], [1, -1]]
 # possible alternatives for kernels: 8 compass directions? twice as many ops, but better for threats accurately
 
@@ -36,7 +41,7 @@ def identify_relevant_positions(board):
 
 def calculate_value_at_point(board, x, y, maxLength=5, player=1):
     value = 0
-    lookup = np.array(genome[:-1])
+    lookup = np.array(genome[:-1]) * THREAT_SCALE
     for direction in directions:
         i, j = x, y
         tilesInARow = 1
@@ -86,7 +91,8 @@ def calculate_value_at_point(board, x, y, maxLength=5, player=1):
             if maxLengthAlongAxis < 5:
                 break
         if tilesInARow >= 5:
-            return 65535  # if this point is part of a winning threat, return infinity/max value
+            # if this point is part of a winning threat, return infinity/max value
+            return 2.0 * THREAT_SCALE
         if blocked:
             value += lookup[
                 clamp(2 * (tilesInARow) - 2, 0, len(lookup) - 1)
@@ -153,14 +159,14 @@ def brain_turn():
     # if AI slated for termination, return immediately
     if state.terminate_ai:
         return
-    npBoard = np.array(board, dtype=int)
-    offensiveScores = np.zeros_like(board, dtype=int)
-    defensiveScores = np.zeros_like(board, dtype=int)
-    totalScores = np.zeros_like(board, dtype=int)
+    npBoard = np.array(board)
+    offensiveScores = np.zeros_like(board)
+    defensiveScores = np.zeros_like(board)
+    totalScores = np.zeros_like(board)
     relevantPositions = identify_relevant_positions(npBoard)
     # Replace Gomocup standard format of 2 = opponent piece for computations
     npBoard[npBoard == 2] = -1
-    validPositions = np.zeros_like(board, dtype=int)
+    validPositions = np.zeros_like(board)
     validPositions[npBoard == 0] = 1
     for x in range(len(board)):
         for y in range(len(board[0])):
@@ -189,7 +195,7 @@ def brain_turn():
         # Randomly choose one of the positions with the maximum score
         x, y = max_positions[np.random.choice(len(max_positions))]
         p = Point(int(x), int(y))
-    if not (is_free(p) and is_valid(p)):
+    if not is_free(p):
         pp.pipe_out(f"ERROR my move {p}")
         return
     pp.do_mymove(p)
@@ -268,7 +274,30 @@ pp.brain_about = brain_about
 # pp.brain_eval = brain_eval
 
 
+def load_genome():
+    if len(sys.argv) <= 1:
+        pp.pipe_out("DEBUG no genome file provided, using default genome.")
+        return
+
+    data = json.loads(sys.argv[1])
+
+    global genome
+    if (
+        isinstance(data, list)
+        and len(data) == len(genome)
+        and all(0 <= val <= 1 for val in data)
+    ):
+        genome = data
+        pp.pipe_out(f"DEBUG using genome: {genome}")
+    else:
+        raise ValueError(
+            f'Genome must be list of length {len(genome)} with values between 0 and 1. Example cmd: pbrain.exe "{genome}"'
+        )
+
+
 def main():
+    load_genome()
+
     pp.main()
 
 
