@@ -1,9 +1,10 @@
 import random
+from typing import Union
 
 from pydantic import BaseModel, Field
 
 MUTATION_RATE = 0.1
-NUM_WEIGHTS = 10
+NUM_WEIGHTS = 9
 
 
 class GomocupAgent(BaseModel):
@@ -24,3 +25,6 @@ class GeneticAgent(BaseModel):
     def mutate(self):
         # Placeholder for mutation logic
         pass
+
+
+Agent = Union[GomocupAgent, GeneticAgent]
