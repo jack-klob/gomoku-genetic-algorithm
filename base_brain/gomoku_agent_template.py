@@ -59,9 +59,8 @@ def calculate_value_at_point(board, x, y, maxLength=5, player=1):
                 continue
             elif board[i][j] == player:  # if new piece of
                 tilesInARow += 1
-            elif (
-                board[i][j] == -player
-            ):  # if there's an enemy piece, threat cannot continue in this direction
+            # if there's an enemy piece, threat cannot continue in this direction
+            elif board[i][j] == -player:
                 lengthPos = k - 1
                 blocked = True
                 break
@@ -83,9 +82,8 @@ def calculate_value_at_point(board, x, y, maxLength=5, player=1):
                 lengthNeg = k - 1
                 blocked = True
                 break
-        if (
-            lengthNeg != 0 and lengthPos != 0
-        ):  # if continuous length is bounded on both ends
+        # if continuous length is bounded on both ends
+        if lengthNeg != 0 and lengthPos != 0:
             maxLengthAlongAxis = lengthNeg + lengthPos + 1
             # if the max length of contiguous spaces containing this point between obstructions can't possibly generate a winning threat
             if maxLengthAlongAxis < 5:
@@ -159,17 +157,21 @@ def brain_turn():
     # if AI slated for termination, return immediately
     if state.terminate_ai:
         return
-    npBoard = np.array(board)
+    npBoard = np.array(board, dtype=int)
     offensiveScores = np.zeros_like(board)
     defensiveScores = np.zeros_like(board)
     totalScores = np.zeros_like(board)
     relevantPositions = identify_relevant_positions(npBoard)
     # Replace Gomocup standard format of 2 = opponent piece for computations
     npBoard[npBoard == 2] = -1
-    validPositions = np.zeros_like(board)
+    validPositions = np.zeros_like(board, dtype=int)
     validPositions[npBoard == 0] = 1
     for x in range(len(board)):
         for y in range(len(board[0])):
+            # poll for termination
+            if state.terminate_ai:
+                return
+
             if (
                 relevantPositions[x][y] == 1 and validPositions[x][y] == 1
             ):  # only calculate scores for valid points within 5 of another piece
@@ -190,7 +192,6 @@ def brain_turn():
         )
     else:
         # Find the point with the maximum score
-        # x, y = np.unravel_index(np.argmax(totalScores), totalScores.shape)
         max_positions = np.argwhere(totalScores == maxScore)
         # Randomly choose one of the positions with the maximum score
         x, y = max_positions[np.random.choice(len(max_positions))]
@@ -209,58 +210,6 @@ def brain_about():
     pp.pipe_out(pp.infotext)
 
 
-# if DEBUG_EVAL:
-#     import win32gui
-
-#     def brain_eval(x, y):
-#         # TODO check if it works as expected
-#         wnd = win32gui.GetForegroundWindow()
-#         dc = win32gui.GetDC(wnd)
-#         rc = win32gui.GetClientRect(wnd)
-#         c = str(board[x][y])
-#         win32gui.ExtTextOut(dc, rc[2] - 15, 3, 0, None, c, ())
-#         win32gui.ReleaseDC(wnd, dc)
-
-
-######################################################################
-# A possible way how to debug brains.
-# To test it, just "uncomment" it (delete enclosing """)
-######################################################################
-"""
-# define a file for logging ...
-DEBUG_LOGFILE = "/tmp/pbrain-pyrandom.log"
-# ...and clear it initially
-with open(DEBUG_LOGFILE,"w") as f:
-	pass
-
-# define a function for writing messages to the file
-def logDebug(msg):
-	with open(DEBUG_LOGFILE,"a") as f:
-		f.write(msg+"\n")
-		f.flush()
-
-# define a function to get exception traceback
-def logTraceBack():
-	import traceback
-	with open(DEBUG_LOGFILE,"a") as f:
-		traceback.print_exc(file=f)
-		f.flush()
-	raise
-
-# use logDebug wherever
-# use try-except (with logTraceBack in except branch) to get exception info
-# an example of problematic function
-def brain_turn():
-	logDebug("some message 1")
-	try:
-		logDebug("some message 2")
-		1. / 0. # some code raising an exception
-		logDebug("some message 3") # not logged, as it is after error
-	except:
-		logTraceBack()
-"""
-######################################################################
-
 # "overwrites" functions in pisqpipe module
 pp.brain_init = brain_init
 pp.brain_restart = brain_restart
@@ -271,7 +220,6 @@ pp.brain_takeback = brain_takeback
 pp.brain_turn = brain_turn
 pp.brain_end = brain_end
 pp.brain_about = brain_about
-# pp.brain_eval = brain_eval
 
 
 def load_genome():
