@@ -34,7 +34,6 @@ class Tournament:
         self.time_per_game = 180
         self.games_per_pair = 2
         self.concurrency = 10
-        self.turns_until_draw = 200
         self.pgn_path = "./log/"
 
     def _new_pgn_file(self, name: str):
@@ -56,8 +55,6 @@ class Tournament:
             "20",
             "-concurrency",
             f"{self.concurrency}",
-            "-drawafter",
-            f"{self.turns_until_draw}",
             "-games",
             f"{self.games_per_pair}",
             "-pgn",
