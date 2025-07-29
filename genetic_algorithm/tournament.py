@@ -30,7 +30,7 @@ def _agent_to_params(agent: Agent):
 
 class Tournament:
     def __init__(self):
-        self.time_per_turn = 10
+        self.time_per_turn = 5
         self.time_per_game = 180
         self.games_per_pair = 2
         self.concurrency = 16
@@ -73,13 +73,13 @@ class Tournament:
 
         result.check_returncode()
 
-    def gauntlet(self, main_agent: Agent, agent_field: Sequence[Agent]):
+    def gauntlet(self, main_agent: Agent, population: Sequence[Agent]):
         command: list[str] = [GOMOKU_CLI_PATH]
         command += self._pre_engine_params()
 
         command += _agent_to_params(main_agent)
-        for gomocup_agent in agent_field:
-            command += _agent_to_params(gomocup_agent)
+        for agent in population:
+            command += _agent_to_params(agent)
 
         command += self._post_engine_params()
         command.append("-gauntlet")
@@ -105,21 +105,13 @@ class Tournament:
     ):
         """run a tournament where each genetic agents plays each gomocup agent some number of times"""
 
-        self.games_per_pair = 2
-        self._new_pgn_file(f"./log/population_trial{population.generation}.pgn")
+        self._new_pgn_file("./log/population_trial.pgn")
 
-        with open(f"./log/log{population.generation}.txt", "w") as f:
-            for i, gomocup_agent in enumerate(gomocup_agents):
-                start = time.time()
-                print(
-                    f"Gauntlet {i + 1}/{len(gomocup_agents)} vs {gomocup_agent.name}",
-                    file=f,
-                    flush=True,
-                )
-                self.gauntlet(gomocup_agent, population.agents)
-                print(
-                    f"completed in {round(time.time() - start, 2)}", file=f, flush=True
-                )
+        for i, gomocup_agent in enumerate(gomocup_agents):
+            start = time.time()
+            print(f"Gauntlet {i + 1}/{len(gomocup_agents)} vs {gomocup_agent.name}")
+            self.gauntlet(gomocup_agent, population.agents)
+            print(f"completed in {round(time.time() - start, 2)}")
 
     def split_tournament(self, population: Population):
         """run several mini round robin tournaments within the population"""
@@ -130,8 +122,9 @@ class Tournament:
         agents_groupings = self.split_random_groups(population.agents, repeats=1)
 
         # Run many round robin tournaments for each member of the population
-        with open(f"./log/log{population.generation}.txt", "w") as f:
+        with open("./log/tournamentlog.txt", "w") as f:
             for i, group in enumerate(agents_groupings):
+                print(f"generation {population.generation}", file=f, flush=True)
                 agent_names = [agent.name for agent in group]
                 print(
                     f"Round robin tournament for group {i + 1}/{len(agents_groupings)}: {agent_names}",
