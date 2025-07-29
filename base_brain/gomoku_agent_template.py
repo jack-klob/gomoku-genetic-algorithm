@@ -9,7 +9,7 @@ from structs import Point
 
 pp.infotext = 'name="pbrain-geneticPeabrain", authors="Andrew Petten, Chance Kane, Jack Klobchar, Tim Xu"'
 # genome for the genetic algorithm 11 values, 10 arbitrary, one constrained to [0,1]
-# #genome = [zero-closed,zero-open,one-closed,one-open,two-closed,two-open,three-closed,three-open,four-closed,four-open, aggression]
+# #genome = [one-closed,one-open,two-closed,two-open,three-closed,three-open,four-closed,four-open, aggression]
 # default genome values
 genome = [0.004, 0.008, 0.016, 0.032, 0.064, 0.56, 0.5, 1.0, 0.5]
 THREAT_SCALE = 1000
