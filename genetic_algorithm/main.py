@@ -4,7 +4,7 @@ from agent import GomocupAgent
 from population import Population
 from tournament import Tournament
 
-POPULATION_SIZE = 25
+POPULATION_SIZE = 50
 
 
 def main():
@@ -13,7 +13,7 @@ def main():
 
     gomocup_agents = [GomocupAgent(**entry) for entry in data]
 
-    pop = Population(50)
+    pop = Population(POPULATION_SIZE)
     tournament = Tournament()
     # tournament.population_trial(pop, gomocup_agents)
     tournament.split_tournament(pop)
