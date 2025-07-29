@@ -5,8 +5,24 @@ from agent import GeneticAgent
 
 
 def crossover(parent1: GeneticAgent, parent2: GeneticAgent) -> GeneticAgent:
-    # Placeholder for crossover
-    return parent1
+    """
+    Create a child agent by combining weights from two parents using uniform crossover
+    """
+    child_weights = []
+    for i in range(len(parent1.weights)):
+        # Randomly choose weight from either parent
+        if random.random() < 0.5:
+            child_weights.append(parent1.weights[i])
+        else:
+            child_weights.append(parent2.weights[i])
+    
+    # Create child with unique name for new generation
+    child = GeneticAgent(
+        name=f"Child_{random.randint(1000, 9999)}",
+        cmd=parent1.cmd,  # Use same command as parents
+        weights=child_weights
+    )
+    return child
 
 
 class Population:
@@ -15,29 +31,87 @@ class Population:
         self.agents = [
             GeneticAgent(
                 name=f"Agent {self.generation}.{i}",
-                cmd="../base_brain/dist/pbrain-agent/pbrain-genetic.exe",
+                cmd="../base_brain/dist/pbrain-agent/pbrain-agent.exe",
             )
             for i in range(size)
         ]
 
     def evolve(self):
-        # Sort agents by their fitness
+        """
+        Evolve the population:
+        - Take top 8 performing agents
+        - Cross breed them for offspring 
+        - Apply slight mutation
+        - Keep top 2 agents from previous generation as elites
+        """
+        # Sort agents by their fitness (descending order)
         self.agents.sort(key=lambda agent: agent.fitness, reverse=True)
-
-        # Select the top half to reproduce
-        selected = self.agents[: len(self.agents) // 2]
-
-        # Create new population with crossover and mutation
-        new_agents = []
-        for _ in range(len(self.agents)):
-            parent1 = random.choice(selected)
-            parent2 = random.choice(selected)
-
+        
+        # Get top 8 performers for crossbreeding
+        top_performers = self.agents[:8]
+        
+        # Keep top 2 as elites (unchanged)
+        elites = self.agents[:2].copy()
+        print(f"Keeping elites: {elites[0].name} (fitness: {elites[0].fitness:.2f}), {elites[1].name} (fitness: {elites[1].fitness:.2f})")
+        
+        # Increment generation
+        self.generation += 1
+        
+        # Update elite names for new generation - preserve original number but add ELITE tag
+        for elite in elites:
+            if "(ELITE)" not in elite.name:
+                elite.name = f"{elite.name} (ELITE)"
+            elite.fitness = -1  # Reset fitness for new tournament
+        
+        # Create new population starting with elites
+        new_agents = elites.copy()
+        
+        # Fill the rest of the population with offspring from top 8 performers
+        offspring_count = len(self.agents) - 2  # Total minus the 2 elites
+        
+        for i in range(offspring_count):
+            # Select two random parents from top 8 performers
+            parent1 = random.choice(top_performers)
+            parent2 = random.choice(top_performers)
+            
+            # Create child through crossover
             child = crossover(parent1, parent2)
+            
+            # Give child proper name for new generation
+            child.name = f"Agent {self.generation}.{len(new_agents)}"
+            child.fitness = -1  # Reset fitness for new tournament
+            
+            # Apply mutation with slight probability
             child.mutate()
+            
             new_agents.append(child)
-
+        
+        # Update population
         self.agents = new_agents
+        
+        print(f"Evolution complete. Generation: {self.generation}")
+        print(f"Population size: {len(self.agents)} (2 elites + {offspring_count} offspring)")
+        print(f"Offspring created from top 8 performers with crossover and mutation")
+
+    def get_top_agents(self, n: int):
+        """Get the top n agents by fitness"""
+        sorted_agents = sorted(self.agents, key=lambda agent: agent.fitness, reverse=True)
+        return sorted_agents[:n]
+
+    def get_statistics(self):
+        """Get population statistics"""
+        if not self.agents:
+            return {"best": 0, "average": 0, "worst": 0}
+        
+        fitnesses = [agent.fitness for agent in self.agents if agent.fitness != -1]
+        if not fitnesses:
+            return {"best": 0, "average": 0, "worst": 0}
+            
+        return {
+            "best": max(fitnesses),
+            "average": sum(fitnesses) / len(fitnesses),
+            "worst": min(fitnesses)
+        }
 
     def generate_fitness_values(self, pgn_path: str):
         results: dict[str, float] = {}
@@ -78,5 +152,7 @@ class Population:
                 update_entry(black_agent, black_score, turns)
 
             for agent in self.agents:
+                if agent.name not in results:
+                    continue
                 agent.fitness = results[agent.name]
                 print(f"{agent.name}: fitness = {agent.fitness}")

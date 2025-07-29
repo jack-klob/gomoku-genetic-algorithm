@@ -23,8 +23,14 @@ class GeneticAgent(BaseModel):
     fitness: float = -1
 
     def mutate(self):
-        # Placeholder for mutation logic
-        pass
+        """Mutate the agent's weights with a 0.1 mutation rate."""
+        mutation_rate = 0.1
+        for i in range(len(self.weights)):
+            if random.random() < mutation_rate:
+                # Add small random noise to the weight
+                self.weights[i] += random.uniform(-0.1, 0.1)
+                # Ensure weights stay within reasonable bounds [0, 1]
+                self.weights[i] = max(0.0, min(1.0, self.weights[i]))
 
 
 Agent = Union[GomocupAgent, GeneticAgent]

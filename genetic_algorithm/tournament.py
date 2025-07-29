@@ -33,7 +33,7 @@ class Tournament:
         self.time_per_turn = 10
         self.time_per_game = 180
         self.games_per_pair = 2
-        self.concurrency = 10
+        self.concurrency = 16
         self.pgn_path = "./log/results.pgn"
 
     def _new_pgn_file(self, name: str):
@@ -69,7 +69,8 @@ class Tournament:
             command += _agent_to_params(agent)
 
         command += self._post_engine_params()
-        result = subprocess.run(command)
+        result = subprocess.run(command, stdout=subprocess.DEVNULL)
+
         result.check_returncode()
 
     def gauntlet(self, main_agent: Agent, agent_field: Sequence[Agent]):
@@ -83,7 +84,7 @@ class Tournament:
         command += self._post_engine_params()
         command.append("-gauntlet")
 
-        result = subprocess.run(command)
+        result = subprocess.run(command, stdout=subprocess.DEVNULL)
         result.check_returncode()
 
     def split_random_groups(self, agents: Sequence, group_size=10, repeats=1):
