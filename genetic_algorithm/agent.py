@@ -20,7 +20,7 @@ class GeneticAgent(BaseModel):
         default_factory=lambda: [random.uniform(0, 1) for _ in range(NUM_WEIGHTS)]
     )
     # fitness set externally
-    fitness: int = -1
+    fitness: float = -1
 
     def mutate(self):
         # Placeholder for mutation logic
