@@ -34,7 +34,7 @@ class Tournament:
         self.time_per_game = 180
         self.games_per_pair = 2
         self.concurrency = 10
-        self.pgn_path = "./log/"
+        self.pgn_path = "./log/results.pgn"
 
     def _new_pgn_file(self, name: str):
         self.pgn_path = name
