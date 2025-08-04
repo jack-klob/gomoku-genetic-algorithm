@@ -21,3 +21,6 @@ Here I present the approach using PyInstaller and Windows command line:
       pyinstaller.exe gomoku_agent_template.py pisqpipe.py --name pbrain-peabrain.exe --onefile
 
 Pisqpipe is a provided dependency for the Gomocup python agent template implementing the Gomocup protocol functions; the stock python agent example is available as example.py for reference.
+
+## Testing EXE in Piskvork
+Compiled EXE templates may be tested and played against via Piskvork (https://sourceforge.net/projects/piskvork/) - open Piskvork, select Players > Settings then select the compiled exe to use it as the brain for an AI opponent. Piskvork also provides support for AI vs AI matches; this is done by simply setting the second player as another agent EXE in the player settings menu and checking both players as AI before beginning the game.
